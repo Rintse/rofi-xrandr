@@ -23,6 +23,22 @@ get_resolutions() {
     get_modes "$1" | awk "{ print \$1 }" || exit 1
 }
 
+parse_indicators() {
+    indicators=""
+    if [[ $1 == *"*"* ]]; then
+        indicators="current"
+    fi
+
+    if [[ $1 == *"+"* ]]; then
+        if [[ -n "$indicators" ]]; then
+            indicators="${indicators}, "
+        fi
+        indicators="${indicators}preferred"
+    fi
+
+    echo "$indicators"
+}
+
 # Lists all refresh rates for given output and resolution
 get_refreshrates() {
     rate_ln=$(get_modes "$1" | grep "\s$2\s") || exit 1
@@ -31,18 +47,35 @@ get_refreshrates() {
         echo "Not a valid resolution for this output" >&2
         exit 1
     else
-        rates=$(echo "$rate_ln" | tr -s " " | cut -d" " -f3- | sed 's/ /\n/g')
-        for rate in $rates; do
-            echo "$rate"
+        rates=$(echo "${rate_ln// +/+/}" | tr -s " " | cut -d" " -f3- | sed 's/ /\n/g')
+        for rate_s in $rates; do
+            rate=${rate_s//[^0-9\.]*/}
+            echo -n "$rate Hz"
+
+            indicators=$(parse_indicators "$rate_s")
+
+            if [[ -n $indicators ]]; then
+                echo " ($indicators)"
+            else
+                echo ""
+            fi
         done
     fi
+}
+
+# Passes options to rofi
+# Arguments: Propmt, selection so far.
+set_opts() {
+    echo -en "\0prompt\x1f$1\n"
+    echo -en "\0message\x1fSelected display: $2\n"
+    echo -en "\0no-custom\x1ftrue\n"
+    echo -en "\0keep-selection\x1ffalse\n"
 }
 
 
 # If called with no arguments, list outputs
 if [[ $# == 0 ]]; then 
-    # Possible icons:  , 
-    echo -en "\0prompt\x1fSelect display\n"
+    echo -en "\0prompt\x1f \n"
     echo -en "\0no-custom\x1ftrue\n"
 
     get_outputs
@@ -50,19 +83,15 @@ fi
 
 # If called with 1 argument, check ROFI_DATA
 if [[ $# == 1 ]]; then 
-    # If not yet set, we are selecting a resolution
+    # If not yet set DATA, we are selecting a resolution
     if [[ -z ${ROFI_DATA} ]]; then
-        # Possible icons: ﭔ ,  ,  , 
-        echo -en "\0prompt\x1fSelect resolution\n"
-        echo -en "\0message\x1fSelected display: $1\n"
-        echo -en "\0no-custom\x1ftrue\n"
-        echo -en "\0keep-selection\x1ffalse\n"
-        # pass selected output to next iteration
-        echo -en "\0data\x1f$1\n"
+        output="$(echo "$1" | xargs)" # strip whitespace
+        set_opts " " "$1"
+        echo -en "\0data\x1f$output\n"
 
         echo -e "Maximum available\nTurn off\n"
-        get_resolutions "$1"
-    
+        get_resolutions "$output"
+
     # Otherwise, if only one data element, 
     # We are selecting a framerate for a resolution
     elif ! [[ $ROFI_DATA == *":"* ]]; then
@@ -78,13 +107,9 @@ if [[ $# == 1 ]]; then
             resolution=$(get_resolutions "$output" | head -n 1)
         fi
 
-        # Possible icons: 龍, or simply Hz
-        echo -en "\0prompt\x1fSelect framerate\n"
-        echo -en "\0message\x1fSelected display: $output ($resolution)\n"
-        echo -en "\0no-custom\x1ftrue\n"
-        echo -en "\0keep-selection\x1ffalse\n"
-        echo -en "\0data\x1f$output:$resolution\n"
+        set_opts "龍" "$output ($resolution)"
 
+        echo -en "\0data\x1f$output:$resolution\n"
         get_refreshrates "$output" "$resolution"
 
     # Othrwise, we have two data elements (output, resolution)
@@ -93,7 +118,7 @@ if [[ $# == 1 ]]; then
         opts=(${ROFI_DATA//:/ })
         output="${opts[0]}"
         resolution="${opts[1]}"
-        framerate="$1"
+        framerate="${1//(.*)/}" # Remove indicators
         
         coproc xrandr --output "$output" --mode "$resolution" --rate "$framerate"
     fi
