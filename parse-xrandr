@@ -8,7 +8,7 @@ get_outputs() {
 
 # Lists all modes for given output
 get_modes() {
-    res=$(xrandr | sed "1,/^$1\s/d" | sed "/^\w/Q" | sed "s/[[:blank:]]*$//")
+    res=$(xrandr | sed "1,/^$1\s/d" | sed "/^\w/Q")
 
     if [[ -z "$res" ]]; then 
         echo "No such X output" >&2
@@ -129,3 +129,4 @@ if [[ $# == 2 ]]; then
     echo -en "\0prompt\x1fSelect framerate for $1\n"
     get_refreshrates "$1" "$2"
 fi
+
