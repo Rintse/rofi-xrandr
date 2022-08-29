@@ -3,7 +3,10 @@ set -o pipefail
 
 # Lists all connected outputs
 get_outputs() {
-    xrandr | grep "[^s]connected" | awk "{ print \$1 }"
+    xrandr | grep "[^s]connected" | \
+        awk "{ print \" \" \$1 \"\\0icon\\x1fdesktopconnected\" }"
+    xrandr | grep "disconnected" | \
+        awk "{ print \" \" \$1 \"\\0icon\\x1fdesktopdisconnected\"}"
 }
 
 # Lists all modes for given output
@@ -75,7 +78,7 @@ set_opts() {
 
 # If called with no arguments, list outputs
 if [[ $# == 0 ]]; then 
-    echo -en "\0prompt\x1f \n"
+    echo -en "\0prompt\x1f \n"
     echo -en "\0no-custom\x1ftrue\n"
 
     get_outputs
@@ -85,12 +88,17 @@ fi
 if [[ $# == 1 ]]; then 
     # If not yet set DATA, we are selecting a resolution
     if [[ -z ${ROFI_DATA} ]]; then
-        output="$(echo "$1" | xargs)" # strip whitespace
-        set_opts " " "$1"
         echo -en "\0data\x1f$output\n"
+        output="$(echo "$1" | xargs)" # strip whitespace
+        res=$(get_resolutions "$output")
 
-        echo -e "Maximum available\nTurn off\n"
-        get_resolutions "$output"
+        set_opts " " "$1"
+
+        if [[ -n $res ]]; then
+            echo -e "Maximum available"
+        fi
+        echo -e "Turn off"
+        echo -e "$res"
 
     # Otherwise, if only one data element, 
     # We are selecting a framerate for a resolution
