@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Lists all connected outputs
+get_outputs() {
+    xrandr | grep "[^s]connected" | \
+        awk "{ print \" \" \$1 \"\\0icon\\x1fdesktopconnected\" }"
+    xrandr | grep "disconnected" | \
+        awk "{ print \" \" \$1 \"\\0icon\\x1fdesktopdisconnected\"}"
+}
+
+rofi_outputs() {
+    echo -en "\0prompt\x1f \n"
+    echo -en "\0no-custom\x1ftrue\n"
+    get_outputs
+}

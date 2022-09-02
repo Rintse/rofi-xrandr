@@ -1,0 +1,31 @@
+#!/bin/bash
+
+get_modes() {
+    res=$(xrandr | sed "1,/^$1\s/d" | sed "/^\w/Q")
+
+    if [[ -z "$res" ]]; then 
+        echo "No such X output" >&2
+        exit 1
+    else 
+        echo "$res"
+    fi
+}
+
+get_resolutions() { 
+    get_modes "$1" | awk "{ print \$1 }" 
+}
+
+rofi_resolutions() {
+    output="$(echo "$1" | xargs)" # strip whitespace
+    res=$(get_resolutions "$output")
+    echo -en "\0data\x1f$output\n"
+
+    set_opts " " "$output"
+
+    if [[ -n $res ]]; then
+        echo -e "Maximum available"
+    fi
+    echo -e "Turn off"
+    echo -e "$res"
+}
+

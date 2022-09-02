@@ -1,0 +1,10 @@
+#!/bin/bash
+
+apply() {
+    opts=(${ROFI_DATA//:/ })
+    output="${opts[0]}"
+    resolution="${opts[1]}"
+    framerate="${1//(.*)/}" # Remove indicators
+
+    coproc xrandr --output "$output" --mode "$resolution" --rate "$framerate"
+}

@@ -1,0 +1,39 @@
+#!/bin/bash
+set -o pipefail
+
+# Passes options to rofi
+# Arguments: Propmt, selection so far.
+set_opts() {
+    echo -en "\0prompt\x1f$1\n"
+    echo -en "\0message\x1fSelected display: $2\n"
+    echo -en "\0no-custom\x1ftrue\n"
+    echo -en "\0keep-selection\x1ffalse\n"
+}
+
+source lib/get_outputs
+source lib/get_modes
+source lib/get_rates
+source lib/apply
+
+# If called with no arguments, list outputs
+if [[ $# == 0 ]]; then 
+    rofi_outputs
+fi
+
+# If called with 1 argument, check ROFI_DATA
+if [[ $# == 1 ]]; then 
+    echo "$ROFI_DATA" 1>&2
+    # If not yet set DATA, we are selecting a resolution
+    if [[ -z ${ROFI_DATA} ]]; then 
+        rofi_resolutions "$1"
+
+    # Otherwise, if only one data element, 
+    # We are selecting a framerate for a resolution
+    elif ! [[ $ROFI_DATA == *":"* ]]; then 
+        rofi_rates "$1"
+
+    # Otherwise, we have two data elements (output, resolution)
+    # and an arg (refresh rate). Call xrandr wit these settings
+    else apply "$1"; fi
+fi
+
