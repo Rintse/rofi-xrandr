@@ -10,6 +10,7 @@ get_outputs() {
 
 rofi_outputs() {
     echo -en "\0prompt\x1f \n"
+    echo -en "\0message\x1fSelect display\n"
     echo -en "\0no-custom\x1ftrue\n"
     get_outputs
 }

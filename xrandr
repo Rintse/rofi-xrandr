@@ -5,7 +5,7 @@ set -o pipefail
 # Arguments: Propmt, selection so far.
 set_opts() {
     echo -en "\0prompt\x1f$1\n"
-    echo -en "\0message\x1fSelected display: $2\n"
+    echo -en "\0message\x1f$2\n"
     echo -en "\0no-custom\x1ftrue\n"
     echo -en "\0keep-selection\x1ffalse\n"
 }
@@ -14,26 +14,69 @@ source lib/get_outputs
 source lib/get_modes
 source lib/get_rates
 source lib/apply
+    
+# Add current input to ROFI_DATA
+if [[ -n "$ROFI_DATA" ]]; then ROFI_DATA+=":"; fi 
+ROFI_DATA+="$(echo "$1" | xargs)" # strip whitespace
+# And pass it on to the next round
+echo -en "\0data\x1f$ROFI_DATA\n"
 
-# If called with no arguments, list outputs
-if [[ $# == 0 ]]; then 
+# Parse the data into an array to access easily
+IFS=":" read -ra DATA <<< "$ROFI_DATA"
+
+echo "$ROFI_DATA" 1>&2
+
+# If called with no data, list displays
+if [[ ${#DATA[@]} == 0 ]]; then 
     rofi_outputs
-fi
 
-# If called with 1 argument, check ROFI_DATA
-if [[ $# == 1 ]]; then 
-    echo "$ROFI_DATA" 1>&2
-    # If not yet set DATA, we are selecting a resolution
-    if [[ -z ${ROFI_DATA} ]]; then 
-        rofi_resolutions "$1"
+# If called with an argument, check ROFI_DATA
+# If no data yet, select an action
+elif [[ ${#DATA[@]} == 1 ]]; then
+    echo -en "\0prompt\x1fSetting to change\n"
+    echo -en "\0no-custom\x1ftrue\n"
+    echo -en "\0keep-selection\x1ffalse\n"
+    echo -en "\0icon\x1fshapes\n"
 
-    # Otherwise, if only one data element, 
-    # We are selecting a framerate for a resolution
-    elif ! [[ $ROFI_DATA == *":"* ]]; then 
-        rofi_rates "$1"
+    echo "Resolution"
+    echo "Disable"
+    echo "Positioning"
+    echo "Rotation"
+    echo "Primary"
 
-    # Otherwise, we have two data elements (output, resolution)
-    # and an arg (refresh rate). Call xrandr wit these settings
-    else apply "$1"; fi
+# Else we are performing an action
+else 
+    # The display should be in the first element of DATA
+    OUTPUT="${DATA[0]}"
+    # The action should be in the second element of DATA
+    case "${DATA[1]}" in
+        "Resolution")
+            if [[ ${#DATA[@]} == 2 ]]; then 
+                echo "Selecting resolution" >&2
+                rofi_resolutions "$OUTPUT"
+            elif [[ ${#DATA[@]} == 3 ]]; then
+                echo "Selecting framerate" >&2
+                rofi_rates "$OUTPUT" "${DATA[2]}"
+            else
+                echo "Applying resolution" >&2
+                apply_resolution "$OUTPUT" "${DATA[2]}" "${DATA[3]}"
+            fi
+            ;;
+        "Disable")
+            echo "Disabling output" >&2
+            ;;
+        "Position")
+            echo "Selecting position" >&2
+            ;;
+        "Rotation")
+            echo "Selecting rotation" >&2
+            ;;
+        "Primary")
+            echo "Selecting primary" >&2
+            ;;
+        *)
+            echo "Not an action: ${DATA[1]}"
+            ;;
+    esac
 fi
 

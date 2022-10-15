@@ -1,6 +1,6 @@
 #!/bin/bash
 
-apply() {
+apply_resolution() {
     opts=(${ROFI_DATA//:/ })
     output="${opts[0]}"
     resolution="${opts[1]}"

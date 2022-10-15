@@ -4,12 +4,14 @@ source lib/get_modes
 source lib/parse_ind
 
 get_rates() {
+    echo "getting  rate ln for $1, on res $2" >&2
     rate_ln=$(get_modes "$1" | grep "\s$2\s") || exit 1
 
     if [[ -z "$rate_ln" ]]; then
         echo "Not a valid resolution for this output" >&2
         exit 1
     else
+        echo "Maximum available"
         rates=$(echo "${rate_ln// +/+/}" | tr -s " " | cut -d" " -f3- | sed 's/ /\n/g')
         for rate_s in $rates; do
             rate=${rate_s//[^0-9\.]*/}
@@ -27,20 +29,13 @@ get_rates() {
 }
 
 rofi_rates() {
-    output=$ROFI_DATA
-    resolution=$1
-
-    if [[ "$resolution" == "Turn off" ]]; then
-        coproc xrandr --output "$output" --off
-        exit
-    fi
+    output=$1
+    resolution=$2
 
     if [[ "$resolution" == "Maximum available" ]]; then
         resolution=$(get_resolutions "$@" | head -n 1)
     fi
 
     set_opts "龍" "$output ($resolution)"
-
-    echo -en "\0data\x1f$output:$resolution\n"
     get_rates "$output" "$resolution"
 }
