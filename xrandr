@@ -14,6 +14,9 @@ set_opts() {
     echo -en "\0keep-selection\x1ffalse\n"
 }
 
+declare -i display_idx=0
+declare -i action_idx=1
+
 # Add current input to ROFI_DATA
 if [[ -n "$ROFI_DATA" ]]; then ROFI_DATA+=":"; fi 
 ROFI_DATA+="$(echo "$1" | xargs)" # strip whitespace
@@ -32,11 +35,13 @@ if [[ ${#DATA[@]} == 0 ]]; then
 # If called with an argument, check ROFI_DATA
 # If no data yet, select an action
 elif [[ ${#DATA[@]} == 1 ]]; then
+    # Formatting
     echo -en "\0prompt\x1fSetting to change\n"
     echo -en "\0no-custom\x1ftrue\n"
     echo -en "\0keep-selection\x1ffalse\n"
     echo -en "\0icon\x1fshapes\n"
 
+    # Actions from which to select
     echo "Resolution"
     echo "Disable"
     echo "Positioning"
@@ -45,10 +50,10 @@ elif [[ ${#DATA[@]} == 1 ]]; then
 
 # Else we are performing an action
 else 
-    # The display should be in the first element of DATA
-    OUTPUT="${DATA[0]}"
+    OUTPUT="${DATA[$display_idx]}"
+    
     # The action should be in the second element of DATA
-    case "${DATA[1]}" in
+    case "${DATA[$action_idx]}" in
         "Resolution")
             if [[ ${#DATA[@]} == 2 ]]; then 
                 echo "Selecting resolution" >&2
@@ -61,19 +66,24 @@ else
                 apply_resolution "$OUTPUT" "${DATA[2]}" "${DATA[3]}"
             fi
             ;;
+
         "Disable")
             apply_disable $OUTPUT
             echo "Disabling output" >&2
             ;;
+
         "Position")
             echo "Selecting position" >&2
             ;;
+
         "Rotation")
             echo "Selecting rotation" >&2
             ;;
+            
         "Primary")
             echo "Selecting primary" >&2
             ;;
+
         *)
             echo "Not an action: ${DATA[1]}"
             ;;
