@@ -1,9 +1,10 @@
 #!/bin/bash
 set -o pipefail
-source lib/get_outputs
-source lib/get_modes
-source lib/get_rates
-source lib/apply
+
+source $(dirname $0)/lib/get_outputs
+source $(dirname $0)/lib/get_modes
+source $(dirname $0)/lib/get_rates
+source $(dirname $0)/lib/apply
     
 # Passes options to rofi
 # Arguments: Propmt, selection so far.

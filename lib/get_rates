@@ -1,7 +1,7 @@
 #!/bin/bash
 
-source lib/get_modes
-source lib/parse_ind
+source $(dirname $0)/lib/get_modes
+source $(dirname $0)/lib/parse_ind
 
 get_rates() {
     echo "getting rate ln for $1, on res $2" >&2
