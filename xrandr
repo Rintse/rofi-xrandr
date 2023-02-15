@@ -1,6 +1,10 @@
 #!/bin/bash
 set -o pipefail
-
+source lib/get_outputs
+source lib/get_modes
+source lib/get_rates
+source lib/apply
+    
 # Passes options to rofi
 # Arguments: Propmt, selection so far.
 set_opts() {
@@ -10,11 +14,6 @@ set_opts() {
     echo -en "\0keep-selection\x1ffalse\n"
 }
 
-source lib/get_outputs
-source lib/get_modes
-source lib/get_rates
-source lib/apply
-    
 # Add current input to ROFI_DATA
 if [[ -n "$ROFI_DATA" ]]; then ROFI_DATA+=":"; fi 
 ROFI_DATA+="$(echo "$1" | xargs)" # strip whitespace
@@ -63,6 +62,7 @@ else
             fi
             ;;
         "Disable")
+            apply_disable $OUTPUT
             echo "Disabling output" >&2
             ;;
         "Position")

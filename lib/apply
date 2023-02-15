@@ -1,10 +1,31 @@
 #!/bin/bash
 
 apply_resolution() {
-    opts=(${ROFI_DATA//:/ })
-    output="${opts[0]}"
-    resolution="${opts[1]}"
-    framerate="${1//(.*)/}" # Remove indicators
+    output=$1
+    resolution=$2
+    framerate="${3//(.*)/}" # Remove indicators
+
+    if [[ "$framerate" == "Maximum available" ]]; then
+        framerate=$(get_rates "$1 $2" | head -n 1)
+    fi
 
     coproc xrandr --output "$output" --mode "$resolution" --rate "$framerate"
+}
+
+apply_disable() {
+    output=$1
+    coproc xrandr --output "$output" --off
+}
+
+apply_position() {
+    output=$1
+    position=$2
+    rel=$3
+    coproc xrandr --output "$output" --$position-of "$rotation"
+}
+
+apply_rotation() {
+    output=$1
+    rotation=$2
+    coproc xrandr --output "$output" --rotation "$rotation"
 }
