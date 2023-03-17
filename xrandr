@@ -18,20 +18,20 @@ set_opts() {
 declare -i display_idx=0
 declare -i action_idx=1
 
+
 # Add current input to ROFI_DATA
 if [[ -n "$ROFI_DATA" ]]; then ROFI_DATA+=":"; fi 
 ROFI_DATA+="$(echo "$1" | xargs)" # strip whitespace
-# And pass it on to the next round
-echo -en "\0data\x1f$ROFI_DATA\n"
 
 # Parse the data into an array to access easily
 IFS=":" read -ra DATA <<< "$ROFI_DATA"
-
 echo "$ROFI_DATA" 1>&2
+
 
 # If called with no data, list displays
 if [[ ${#DATA[@]} == 0 ]]; then 
     rofi_outputs
+
 
 # If called with an argument, check ROFI_DATA
 # If no data yet, select an action
@@ -49,6 +49,7 @@ elif [[ ${#DATA[@]} == 1 ]]; then
     echo "Rotation"
     echo "Primary"
 
+
 # Else we are performing an action
 else 
     OUTPUT="${DATA[$display_idx]}"
@@ -60,9 +61,17 @@ else
                 echo "Selecting resolution" >&2
                 rofi_resolutions "$OUTPUT"
             elif [[ ${#DATA[@]} == 3 ]]; then
+                if[[ ${DATA[2]} == "Maximum Available" ]]; then
+                    echo "TODO: replace with actual max value"
+                fi
+
                 echo "Selecting framerate" >&2
                 rofi_rates "$OUTPUT" "${DATA[2]}"
             else
+                if[[ ${DATA[3]} == "Maximum Available" ]]; then
+                    echo "TODO: replace with actual max value"
+                fi
+
                 echo "Applying resolution" >&2
                 apply_resolution "$OUTPUT" "${DATA[2]}" "${DATA[3]}"
             fi
@@ -91,3 +100,6 @@ else
     esac
 fi
 
+# Pass selected values onto the next round
+ROFI_DATA=$(IFS=':' ; echo "${DATA[*]}")
+echo -en "\0data\x1f$ROFI_DATA\n"

@@ -3,6 +3,10 @@
 source $(dirname $0)/lib/get_modes
 source $(dirname $0)/lib/parse_ind
 
+get_maximum_rate() {
+    get_rates "$@" | head -n 1
+}
+
 get_rates() {
     echo "getting rate ln for $1, on res $2" >&2
     rate_ln=$(get_modes "$1" | grep "\s$2\s") || exit 1

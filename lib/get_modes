@@ -21,9 +21,13 @@ rofi_resolutions() {
 
     set_opts " " "$output"
 
-    if [[ -n $res ]]; then
+    # Add maximum option if more than 1 available
+    if [[ $(echo $res | wc -l) > 1 ]]; then
         echo -e "Maximum available"
     fi
     echo -e "$res"
 }
 
+maximum_reolution() {
+    get_resolutions "$@" | head -n 1
+}
